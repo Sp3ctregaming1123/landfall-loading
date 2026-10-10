@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Landfall // Loading</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+@font-face{font-family:'Rajdhani';font-weight:500;src:url(fonts/rajdhani-500.woff2) format('woff2');}
+@font-face{font-family:'Rajdhani';font-weight:700;src:url(fonts/rajdhani-700.woff2) format('woff2');}
+@font-face{font-family:'ShareTechMono';font-weight:400;src:url(fonts/sharetechmono-400.woff2) format('woff2');}
+:root{--amber:#f2b33d;--amber-dim:rgba(242,179,61,.55);--amber-faint:rgba(242,179,61,.18);--ink:#e9e2d0;--panel:rgba(8,10,12,.62);}
+*{margin:0;padding:0;box-sizing:border-box;}
+html,body{width:100%;height:100%;overflow:hidden;background:#05070a;color:#e9e2d0;font-family:'Rajdhani','Segoe UI',Arial,sans-serif;font-weight:500;cursor:default;-webkit-user-select:none;user-select:none;}
+#poster,#bg{position:fixed;top:0;left:0;width:100%;height:100%;}
+#poster{background:url(media/poster.jpg) center center / cover no-repeat,url(media/poster.svg) center center / cover no-repeat,#05070a;}
+#bg{object-fit:cover;background:transparent;opacity:0;transition:opacity 1.2s ease;}
+#bg.on{opacity:1;}
+/* gradients only at the very edges so the centred story text and the ODST stay clear */
+#shade-top{position:fixed;left:0;right:0;top:0;height:90px;background:linear-gradient(to bottom,rgba(0,0,0,.5),rgba(0,0,0,0));pointer-events:none;}
+#shade-bot{position:fixed;left:0;right:0;bottom:0;height:110px;background:linear-gradient(to top,rgba(0,0,0,.82),rgba(0,0,0,0));pointer-events:none;}
+#scan{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;opacity:.07;background:repeating-linear-gradient(to bottom,#000 0,#000 1px,transparent 1px,transparent 3px);}
+.mono{font-family:'ShareTechMono','Consolas',monospace;letter-spacing:.06em;}
+.amber{color:#f2b33d;}
+/* top-left ident */
+#ident{position:fixed;top:26px;left:34px;}
+#ident .mark{display:inline-block;vertical-align:middle;width:34px;height:34px;margin-right:12px;}
+#ident .txt{display:inline-block;vertical-align:middle;}
+#ident .name{font-weight:700;font-size:22px;letter-spacing:.32em;color:#f2b33d;line-height:1;}
+#ident .sub{font-size:12px;letter-spacing:.28em;color:rgba(233,226,208,.7);margin-top:5px;}
+/* lower-right panel: clear of the widest crawl lines (35-45% height, up to 95% width) and of the ODST on the left half */
+#panel{position:fixed;right:34px;bottom:72px;width:300px;padding:16px 18px 14px;background:linear-gradient(to left,rgba(5,7,10,.72),rgba(5,7,10,.38));border-right:2px solid #f2b33d;}
+#panel .hdr{font-size:11px;letter-spacing:.3em;color:rgba(242,179,61,.8);margin-bottom:10px;}
+#status{font-weight:700;font-size:19px;letter-spacing:.14em;text-transform:uppercase;color:#f2b33d;line-height:1.2;min-height:23px;}
+#status:before{content:'';display:inline-block;width:8px;height:8px;margin-right:10px;background:#f2b33d;vertical-align:2px;animation:blink 1.1s steps(2,start) infinite;}
+#panel .rows{margin-top:12px;font-size:13px;line-height:1.75;}
+#panel .row{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+#panel .k{display:inline-block;width:68px;color:rgba(242,179,61,.75);}
+#panel .v{color:#e9e2d0;}
+#tip{margin-top:12px;padding-top:10px;border-top:1px solid rgba(242,179,61,.25);font-size:14px;line-height:1.35;color:rgba(233,226,208,.85);min-height:40px;transition:opacity .6s ease;}
+#tip .tag{display:block;font-size:11px;color:#f2b33d;font-weight:700;letter-spacing:.3em;margin-bottom:3px;}
+/* bottom bar: the bottom 10-15% of the video is empty throughout */
+#hud{position:fixed;left:34px;right:34px;bottom:24px;}
+#bar{position:relative;height:10px;border:1px solid rgba(242,179,61,.55);background:rgba(242,179,61,.06);clip-path:polygon(0 0,100% 0,100% 100%,8px 100%,0 calc(100% - 8px));}
+#fill{position:absolute;left:0;top:0;bottom:0;width:0;background:linear-gradient(to right,rgba(242,179,61,.55),#f2b33d);transition:width .5s ease;}
+#bar:after{content:'';position:absolute;top:0;left:0;right:0;bottom:0;background:repeating-linear-gradient(to right,transparent 0,transparent 14px,rgba(5,7,10,.85) 14px,rgba(5,7,10,.85) 17px);}
+#sub{position:relative;height:18px;margin-top:7px;font-size:12px;color:rgba(233,226,208,.6);}
+#file{position:absolute;left:0;top:0;max-width:60%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+#count{position:absolute;right:70px;top:0;}
+#pct{position:absolute;right:0;top:-2px;font-size:16px;color:#f2b33d;}
+#audio{position:fixed;right:34px;top:26px;font-size:12px;color:rgba(233,226,208,.55);cursor:pointer;border:1px solid rgba(233,226,208,.25);padding:3px 9px;}
+#audio:hover{color:#f2b33d;border-color:rgba(242,179,61,.6);}
+.corner{position:fixed;width:18px;height:18px;border-color:rgba(242,179,61,.5);border-style:solid;pointer-events:none;}
+.c-tl{top:12px;left:12px;border-width:2px 0 0 2px;}.c-tr{top:12px;right:12px;border-width:2px 2px 0 0;}
+.c-bl{bottom:12px;left:12px;border-width:0 0 2px 2px;}.c-br{bottom:12px;right:12px;border-width:0 2px 2px 0;}
+@keyframes blink{to{visibility:hidden;}}
+#fader{position:fixed;top:0;left:0;width:100%;height:100%;background:#000;opacity:0;pointer-events:none;transition:opacity 1.2s ease;}
+#fader.on{opacity:1;}
+@media (max-width:1100px){#panel{width:250px;right:20px;}#status{font-size:16px;}}
+@media (max-height:700px){#ident .name{font-size:18px;}#hud{bottom:16px;}#tip{font-size:13px;}}
+</style>
+</head>
+<body>
+<div id="poster"></div>
+<video id="bg" playsinline preload="auto" poster="media/poster.jpg">
+  <source src="media/landfall_720p.webm" type='video/webm; codecs="vp9, opus"'>
+  <source src="media/landfall_720p.mp4" type='video/mp4; codecs="avc1.640028, mp4a.40.2"'>
+</video>
+<div id="shade-top"></div><div id="shade-bot"></div><div id="scan"></div>
+<div class="corner c-tl"></div><div class="corner c-tr"></div><div class="corner c-bl"></div><div class="corner c-br"></div>
+
+<div id="ident">
+  <svg class="mark" viewBox="0 0 34 34" aria-hidden="true">
+    <polygon points="17,2 32,10 32,24 17,32 2,24 2,10" fill="none" stroke="#f2b33d" stroke-width="2"/>
+    <polygon points="17,9 25,22 9,22" fill="#f2b33d"/>
+  </svg>
+  <div class="txt"><div class="name">LANDFALL</div><div class="sub">UNSC // ODST ROLEPLAY</div></div>
+</div>
+
+<div id="audio" class="mono">AUDIO: --</div>
+
+<div id="panel">
+  <div class="hdr mono">INSERTION STATUS</div>
+  <div id="status">Establishing uplink</div>
+  <div class="rows mono">
+    <div class="row"><span class="k">SERVER</span><span class="v" id="i-server">LANDFALL ODST RP</span></div>
+    <div class="row"><span class="k">AO</span><span class="v" id="i-map">--</span></div>
+    <div class="row"><span class="k">SLOTS</span><span class="v" id="i-slots">--</span></div>
+  </div>
+  <div id="tip"><span class="tag">INTEL</span><span id="tip-text"></span></div>
+</div>
+
+<div id="hud">
+  <div id="bar"><div id="fill"></div></div>
+  <div id="sub" class="mono"><div id="file">&nbsp;</div><div id="count"></div><div id="pct">0%</div></div>
+</div>
+<div id="fader"></div>
+
+<script>
+/* ES5 only: must not throw on Awesomium (Chromium 17, some Linux main-branch players). */
+var CFG = {
+  baseVolume: 0.3,    /* multiplied by the player's snd_musicvolume (GameDetails) */
+  loopFrom: 102.2,    /* after the first full play, loop only the drop-pod segment (pod shot fades in from black at 1:42) */
+  fadeSecs: 1.5,
+  tips: [
+    'First load in is always long. It is worth it, we promise.',
+    'If load times are an issue, set your downloads to map content only in options.',
+    'Feet first into hell.'
+  ],
+  tipEvery: 8000
+};
+var IS_AWESOMIUM = navigator.userAgent.toLowerCase().indexOf('awesomium') !== -1;
+function $(id){ return document.getElementById(id); }
+function setText(id, t){ var e = $(id); if (e) e.textContent = t; }
+function q(name){ var m = new RegExp('[?&]' + name + '=([^&#]*)').exec(location.search); return m ? decodeURIComponent(m[1].replace(/\+/g,' ')) : ''; }
+
+var state = { total: 0, needed: 0, phase: 0, volume: 1, muted: false };
+var video = $('bg');
+
+/* ---- video ---- */
+function applyVolume(){
+  if (!video || IS_AWESOMIUM) return;
+  var v = Math.max(0, Math.min(1, CFG.baseVolume * state.volume * gain));
+  video.volume = v;
+  video.muted = state.muted || (state.volume === 0);
+  setText('audio', video.muted ? 'AUDIO: OFF' : 'AUDIO: ON');
+}
+function startVideo(){
+  if (!video || IS_AWESOMIUM || !video.canPlayType) { if (video) video.style.display = 'none'; setText('audio', 'AUDIO: N/A'); return; }
+  if (!video.canPlayType('video/webm; codecs="vp9, opus"') && !video.canPlayType('video/mp4; codecs="avc1.640028, mp4a.40.2"')) { video.style.display = 'none'; setText('audio','AUDIO: N/A'); return; }
+  video.addEventListener('playing', function(){ video.className = 'on'; });
+  /* no hard cut back to the text crawl: fade to black near the end, jump to the pod segment, fade back in */
+  var looping = false;
+  video.addEventListener('timeupdate', function(){
+    if (looping || !video.duration) return;
+    if (video.duration - video.currentTime < CFG.fadeSecs) { looping = true; $('fader').className = 'on'; rampAudio(0); }
+  });
+  function relaunch(){
+    video.currentTime = CFG.loopFrom; var p = video.play(); if (p && p.catch) p.catch(function(){});
+    setTimeout(function(){ $('fader').className = ''; rampAudio(1); looping = false; }, 300);
+  }
+  video.addEventListener('ended', relaunch);
+  applyVolume();
+  var p = video.play();
+  if (p && p.catch) p.catch(function(){
+    /* autoplay with sound refused: fall back to muted playback */
+    state.muted = true; applyVolume(); var p2 = video.play(); if (p2 && p2.catch) p2.catch(function(){});
+  });
+}
+$('audio').onclick = function(){ state.muted = !state.muted; if (!state.muted && state.volume === 0) state.volume = 1; applyVolume(); if (video.paused) video.play(); };
+
+var gain = 1, rampT = null;
+function rampAudio(target){
+  clearInterval(rampT);
+  rampT = setInterval(function(){ gain += (target > gain ? 0.1 : -0.1); if (gain <= 0 || gain >= 1) { gain = Math.max(0, Math.min(1, gain)); clearInterval(rampT); } applyVolume(); }, CFG.fadeSecs * 100);
+}
+/* ---- progress ---- */
+/* Status-text phases give the bar movement even when nothing is downloaded (workshop/FastDL cached). */
+var PHASES = [
+  [/retrieving server info|connecting|establish/i, 3],
+  [/workshop|mounting|addon/i, 10],
+  [/sending client info|client info/i, 72],
+  [/lua|received all/i, 82],
+  [/starting lua/i, 90],
+  [/lua started|precach|spawn/i, 96]
+];
+function render(){
+  var pct = state.phase;
+  if (state.total > 0) {
+    var done = Math.max(0, state.total - state.needed);
+    var dl = 10 + 60 * (done / state.total); /* downloads occupy 10..70% */
+    if (dl > pct) pct = dl;
+    setText('count', done + ' / ' + state.total + ' FILES');
+  }
+  pct = Math.max(0, Math.min(100, Math.round(pct)));
+  $('fill').style.width = pct + '%';
+  setText('pct', pct + '%');
+}
+window.GameDetails = function(servername, serverurl, mapname, maxplayers, steamid, gamemode, volume, language){
+  if (servername) setText('i-server', String(servername).toUpperCase());
+  if (mapname) setText('i-map', String(mapname).toUpperCase());
+  if (maxplayers) setText('i-slots', String(maxplayers));
+  var v = parseFloat(volume); if (!isNaN(v)) { state.volume = v; applyVolume(); }
+};
+window.SetFilesTotal = function(total){ state.total = parseInt(total, 10) || 0; render(); };
+window.SetFilesNeeded = function(needed){ state.needed = parseInt(needed, 10) || 0; render(); };
+window.DownloadingFile = function(fileName){ setText('file', 'RECV  ' + String(fileName)); setText('status', 'Downloading content'); };
+window.SetStatusChanged = function(status){
+  var s = String(status || '');
+  setText('status', s.replace(/\.+$/, '') || 'Standing by');
+  for (var i = 0; i < PHASES.length; i++) if (PHASES[i][0].test(s) && PHASES[i][1] > state.phase) state.phase = PHASES[i][1];
+  if (!/download/i.test(s)) setText('file', '\u00a0');
+  render();
+};
+
+/* ---- tips ---- */
+var tipIdx = Math.floor(Math.random() * CFG.tips.length);
+function nextTip(){
+  var t = $('tip-text'); var box = $('tip');
+  box.style.opacity = 0;
+  setTimeout(function(){ t.textContent = CFG.tips[tipIdx]; tipIdx = (tipIdx + 1) % CFG.tips.length; box.style.opacity = 1; }, 600);
+}
+
+/* ---- boot ---- */
+(function(){
+  var m = q('map'); if (m) setText('i-map', m.toUpperCase());
+  $('tip-text').textContent = CFG.tips[tipIdx]; tipIdx = (tipIdx + 1) % CFG.tips.length;
+  setInterval(nextTip, CFG.tipEvery);
+  render();
+  startVideo();
+  if (/[?&]demo=1/.test(location.search)) {   /* local preview only */
+    GameDetails('Landfall ODST RP', '', 'rp_landfall_reach', 64, '', 'ixhl2rp', 1, 'en');
+    SetStatusChanged('Downloading files...'); SetFilesTotal(240); SetFilesNeeded(96);
+    DownloadingFile('materials/models/odst/helmet_visor_d.vtf');
+    var t = parseFloat(q('t')); if (t && video && !IS_AWESOMIUM) video.addEventListener('loadedmetadata', function(){ video.currentTime = t; });
+  }
+})();
+</script>
+</body>
+</html>
