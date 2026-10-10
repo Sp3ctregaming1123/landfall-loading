@@ -8,7 +8,7 @@ SetFilesNeeded, DownloadingFile).
 - media/landfall_720p.mp4   H.264/AAC fallback (normal browsers / GModPatchTool users only)
 - media/poster.jpg          still shown before playback and on Awesomium (Linux main branch)
 - Video plays once from 0:00, then loops only the drop-pod segment (from 1:42) with a fade through black.
-- Audio: 0.3 x the player's in-game music volume (snd_musicvolume); AUDIO toggle top-right.
+- Audio: 0.3 x the player's in-game music volume (snd_musicvolume).
 - Preview locally: index.html?demo=1 (fills fake loading data), &t=SECONDS to seek.
 
 server.cfg:  sv_loadingurl "https://<host>/?map=%m&steamid=%s"
